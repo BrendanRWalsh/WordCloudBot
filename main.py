@@ -36,7 +36,7 @@ async def on_message(message):
         cmd = text.split()
         if len(cmd) < 2:
             await message.channel.send('generating word cloud of {0.author}'.format(message))
-            print('generating word cloud of {0.author}')
+            print('generating word cloud of '+str(message.author))
             params = {'author': message.author,
                       'postTo': message.channel,
                       'users': [
@@ -78,11 +78,14 @@ async def getHistory(params):
 
     # iterate over channels and return word counts
     for channel in params["channels"]:
-        async for msg in channel.history():
+        async for msg in channel.history(limit=10000):
             if msg.author in params["users"]:
-                content = msg.content.split()
+                content = msg.content.lower()
+                for i in [";", ";", ",", ".", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
+                    content = content.replace(i, " ")
+                content = content.split()
                 for word in content:
-                    if word[0].isalpha() and len(word) > 2 and not word.startswith("html") and not word.startswith("http"):
+                    if word[0].isalpha() and len(word) > 2 and len(word) < 10 and not word.startswith("html") and not word.startswith("http") and word not in ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but"]:
                         if word in words:
                             words[word] += 1
                         else:
@@ -94,8 +97,7 @@ async def getHistory(params):
                     # break
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
-
-    await generateWordCloud(list(words.keys()),params)
+    await generateWordCloud(words, params)
 
 
 def getChannels():
@@ -105,23 +107,27 @@ def getChannels():
     return channelList
 
 
-async def generateWordCloud(text,params):
+async def generateWordCloud(text, params):
     avatar = requests.get(params["author"].avatar_url)
-    colouring = np.array(Image.open(BytesIO(avatar.content)))
+    image = Image.open(BytesIO(avatar.content))
+    colouring = np.array(image)
     stopwords = set(STOPWORDS)
     filename = "wordclouds/"+str(params["author"])+".png"
-    wc = WordCloud(stopwords=stopwords,mask=colouring,max_words=2000)
-    wc.generate(" ".join(text))
+    wc = WordCloud(width=image.width, relative_scaling=0.2, stopwords=stopwords, height=image.height, mode="RGB", min_font_size=1,
+                   max_words=2000, repeat=True, font_step=1, max_font_size=int(image.width/15))
+    wc.generate_from_frequencies(text)
     image_colors = ImageColorGenerator(colouring)
     # show
     fig, axes = plt.subplots(1, 3)
     axes[0].imshow(wc, interpolation="bilinear")
     # recolor wordcloud and show
     # we could also give color_func=image_colors directly in the constructor
-    axes[1].imshow(wc.recolor(color_func=image_colors), interpolation="bilinear")
+    axes[1].imshow(wc.recolor(color_func=image_colors),
+                   interpolation="bilinear")
     axes[2].imshow(colouring, cmap=plt.cm.gray, interpolation="bilinear")
     wc.to_file(filename)
     f = discord.File(filename)
+    await params["postTo"].send('Wordcloud for ' + str(params["author"]) + ' complete!')
     await params["postTo"].send(file=f)
 
 client.run(TOKEN)
@@ -142,6 +148,6 @@ client.run(TOKEN)
 # file_location = "data.csv"  # Set the string to where you want the file to be saved to
 # data.to_csv(file_location)
 # data = pd.DataFrame(columns=['content', 'time', 'author'])
-    # # Display the generated image:
-    # plt.imshow(wordcloud, interpolation='bilinear')
-    # plt.axis("off")
+# # Display the generated image:
+# plt.imshow(wordcloud, interpolation='bilinear')
+# plt.axis("off")
