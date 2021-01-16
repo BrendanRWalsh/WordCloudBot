@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from PIL import Image
+import requests
+from io import BytesIO
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 
@@ -34,6 +36,7 @@ async def on_message(message):
         cmd = text.split()
         if len(cmd) < 2:
             await message.channel.send('generating word cloud of {0.author}'.format(message))
+            print('generating word cloud of {0.author}')
             params = {'author': message.author,
                       'postTo': message.channel,
                       'users': [
@@ -103,8 +106,21 @@ def getChannels():
 
 
 async def generateWordCloud(text,params):
+    avatar = requests.get(params["author"].avatar_url)
+    colouring = np.array(Image.open(BytesIO(avatar.content)))
+    stopwords = set(STOPWORDS)
     filename = "wordclouds/"+str(params["author"])+".png"
-    WordCloud().generate(" ".join(text)).to_file(filename)
+    wc = WordCloud(stopwords=stopwords,mask=colouring,max_words=2000)
+    wc.generate(" ".join(text))
+    image_colors = ImageColorGenerator(colouring)
+    # show
+    fig, axes = plt.subplots(1, 3)
+    axes[0].imshow(wc, interpolation="bilinear")
+    # recolor wordcloud and show
+    # we could also give color_func=image_colors directly in the constructor
+    axes[1].imshow(wc.recolor(color_func=image_colors), interpolation="bilinear")
+    axes[2].imshow(colouring, cmap=plt.cm.gray, interpolation="bilinear")
+    wc.to_file(filename)
     f = discord.File(filename)
     await params["postTo"].send(file=f)
 
