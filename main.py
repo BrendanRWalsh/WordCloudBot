@@ -33,12 +33,13 @@ async def on_message(message):
     if text.startswith('!cloudme'):
         cmd = text.split()
         if len(cmd) < 2:
-            await message.channel.send('generating word cloud of{0.author}'.format(message))
+            await message.channel.send('generating word cloud of {0.author}'.format(message))
             params = {'author': message.author,
+                      'postTo': message.channel,
                       'users': [
                           message.author],
                       'channels': None,
-                      'range':100}
+                      'range': 100}
             await getHistory(params)
         else:
             text = text.replace("!cloudme ", "")
@@ -78,17 +79,20 @@ async def getHistory(params):
             if msg.author in params["users"]:
                 content = msg.content.split()
                 for word in content:
-                    if not words[word]:
-                        words[word] = 1
-                    else:
-                        words[word] += 1
+                    if word[0].isalpha() and len(word) > 2 and not word.startswith("html") and not word.startswith("http"):
+                        if word in words:
+                            words[word] += 1
+                        else:
+                            words[word] = 1
 
                 # if len(data) == limit:
-                    #break
+                    # break
                 # if msg.crated_at > params["range"]:
                     # break
-    print(words)
+    words = {k: v for k, v in sorted(
+        words.items(), key=lambda item: item[1], reverse=True)}
 
+    await generateWordCloud(list(words.keys()),params)
 
 
 def getChannels():
@@ -98,17 +102,11 @@ def getChannels():
     return channelList
 
 
-def generateWordCloud(params):
-    if "users" not in params:
-        params["users"] = params["author"]
-
-    wordcloud = WordCloud().generate("tits")
-    location = "wordclouds/test.png"
-    wordcloud.to_file(location)
-    # Display the generated image:
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
-
+async def generateWordCloud(text,params):
+    filename = "wordclouds/"+str(params["author"])+".png"
+    WordCloud().generate(" ".join(text)).to_file(filename)
+    f = discord.File(filename)
+    await params["postTo"].send(file=f)
 
 client.run(TOKEN)
 
@@ -122,9 +120,12 @@ client.run(TOKEN)
 # await message.channel.send(msg)
 # userPattern = r"users?\s*=\s*(.+)"
 #     channelPattern = r"channel?\s*=\s*(.+)"
-                # data = data.append({'content': msg.content,
-                #                     'time': msg.created_at,
-                #                     'author': msg.author.name}, ignore_index=True)
+# data = data.append({'content': msg.content,
+#                     'time': msg.created_at,
+#                     'author': msg.author.name}, ignore_index=True)
 # file_location = "data.csv"  # Set the string to where you want the file to be saved to
 # data.to_csv(file_location)
 # data = pd.DataFrame(columns=['content', 'time', 'author'])
+    # # Display the generated image:
+    # plt.imshow(wordcloud, interpolation='bilinear')
+    # plt.axis("off")
