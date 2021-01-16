@@ -37,7 +37,8 @@ async def on_message(message):
             params = {'author': message.author,
                       'users': [
                           message.author],
-                      'channels': []}
+                      'channels': None,
+                      'range':100}
             await getHistory(params)
         else:
             text = text.replace("!cloudme ", "")
@@ -66,31 +67,34 @@ def parse(text):
 
 
 async def getHistory(params):
-    data = pd.DataFrame(columns=['content', 'time', 'author'])
-
+    words = {}
     # Create list of channels to iterate over
-    if params["channels"] == None:
+    if not params["channels"]:
         params["channels"] = getChannels()
 
-    # As an example, I've set the limit to 10000
-    async for channel in params["channels"]:
-        async for msg in channel.history(limit=100):
-            if msg.author == params["author"]:
-                data = data.append({'content': msg.content,
-                                    'time': msg.created_at,
-                                    'author': msg.author.name}, ignore_index=True)
-                if len(data) == limit:
-                    break
-    file_location = "data.csv"  # Set the string to where you want the file to be saved to
-    data.to_csv(file_location)
+    # iterate over channels and return word counts
+    for channel in params["channels"]:
+        async for msg in channel.history():
+            if msg.author in params["users"]:
+                content = msg.content.split()
+                for word in content:
+                    if not words[word]:
+                        words[word] = 1
+                    else:
+                        words[word] += 1
+
+                # if len(data) == limit:
+                    #break
+                # if msg.crated_at > params["range"]:
+                    # break
+    print(words)
+
 
 
 def getChannels():
     channelList = []
     for guild in client.guilds:
-        for channel in guild.channels:
-            if channel.type == 'text':
-                channelList.append(channel)
+        channelList = guild.text_channels
     return channelList
 
 
@@ -118,3 +122,9 @@ client.run(TOKEN)
 # await message.channel.send(msg)
 # userPattern = r"users?\s*=\s*(.+)"
 #     channelPattern = r"channel?\s*=\s*(.+)"
+                # data = data.append({'content': msg.content,
+                #                     'time': msg.created_at,
+                #                     'author': msg.author.name}, ignore_index=True)
+# file_location = "data.csv"  # Set the string to where you want the file to be saved to
+# data.to_csv(file_location)
+# data = pd.DataFrame(columns=['content', 'time', 'author'])
