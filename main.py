@@ -33,7 +33,6 @@ async def on_message(message):
     if message.author == client.user:
         return
     if text.startswith('!cloudme'):
-        await message.channel.send('generating word cloud of {0.author}'.format(message))
         params = {'author': message.author,
                     'guild':message.guild,
                     'postTo': message.channel,
@@ -41,12 +40,13 @@ async def on_message(message):
                         message.author],
                     'channels': None,
                     'range': 100}
-        parse(text,params)
+        await parse(text,params)
 
 
-def parse(text,params):
+async def parse(text,params):
     cmd = text.split()
     if len(cmd) < 2:
+        await message.channel.send('generating word cloud of {0.author}'.format(message))
         print('generating word cloud of '+str(message.author))
 
         await getHistory(params)
@@ -61,7 +61,7 @@ def parse(text,params):
             embed.add_field(name="mask= [true/false]", value="Choose to automatically mask image based on colour. Default = False.")
             embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
             await params["postTo"].send(embed=embed)
-
+    return True
     # cmds = {"users": none,
     #         "channels": none,
     #         "picture": none,
