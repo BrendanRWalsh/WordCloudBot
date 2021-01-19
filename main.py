@@ -1,8 +1,5 @@
-# bot.py
 import os
 import discord
-# from discord.utils import get
-# from discord.ext import commands
 from dotenv import load_dotenv
 import re
 import time
@@ -14,25 +11,26 @@ import requests
 from io import BytesIO
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
-
+# Discord
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-
 client = discord.Client()
 guild = discord.Guild
 
-
+# log onto discord service
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
 
-
+#Listen event
 @client.event
 async def on_message(message):
     text = message.content.lower()
     if message.author == client.user:
         return
+    #Prefix check
     if text.startswith('!cloudme'):
+        #set paramaters to operate on
         params = {'author': message.author,
                     'guild':message.guild,
                     'postTo': message.channel,
@@ -42,18 +40,20 @@ async def on_message(message):
                     'range': 100}
         await parse(text,params)
 
-
+# Interprate text from user
 async def parse(text,params):
     cmd = text.split()
+    # check if the user submitted any parameters
     if len(cmd) < 2:
+        # if not, default generation
         await params["postTo"].send('generating word cloud of ' + str(params["author"]))
         print('generating word cloud of '+str(params["author"]))
-
         await getHistory(params)
     else:
+        # If user submitted help command
         if cmd[1]=="help" or cmd[1]=="?":
             embed = discord.Embed(title="How to use:", colour=discord.Colour(0x6a5cae))
-            embed.set_footer(text="hosted at https://github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
+            embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
             embed.add_field(name="-----------------", value="!cloudme [parameters]")
             embed.add_field(name="users= [name|id]", value="list of users to generate cloud of e.g. \"users= Dagon, Cthulu, John\". Default= self. Ensure commas \",\" are between users.")
             embed.add_field(name="channels= [name|id]", value="list of channels to generate cloud from e.g. \"channels= Cultist talk, general_worship\". Default= all. Ensure commas \",\" are between channels.")
@@ -61,6 +61,7 @@ async def parse(text,params):
             embed.add_field(name="mask= [true/false]", value="Choose to automatically mask image based on colour. Default = False.")
             embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
             await params["postTo"].send(embed=embed)
+        
     return True
     # cmds = {"users": none,
     #         "channels": none,
@@ -104,7 +105,10 @@ async def getHistory(params):
                             words[word] = 1
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
-    await generateWordCloud(words, params)
+    if not words:
+        params["postTo"].send("Sorry, not enough words in this server for me to make a word cloud with these paramaters, try again later! (or spam the channels for a bit)")
+    else:    
+        await generateWordCloud(words, params)
 
 
 def getChannels(guild):
