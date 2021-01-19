@@ -51,7 +51,7 @@ async def parse(text,params):
 
         await getHistory(params)
     else:
-        if cmd[1]=="help" | cmd[1]=="?":
+        if cmd[1]=="help" or cmd[1]=="?":
             embed = discord.Embed(title="How to use:", colour=discord.Colour(0x6a5cae))
             embed.set_footer(text="hosted at https://github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
             embed.add_field(name="-----------------", value="!cloudme [parameters]")
