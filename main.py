@@ -33,7 +33,7 @@ async def on_message(message):
     if message.author == client.user:
         return
     if text.startswith('!cloudme'):
-    parse(text, message.author)
+        parse(text, message.author)
 
 
 def parse(text):
