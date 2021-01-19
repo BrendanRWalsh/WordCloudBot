@@ -33,10 +33,11 @@ async def on_message(message):
     if message.author == client.user:
         return
     if text.startswith('!cloudme'):
-        parse(text, message.author)
+        parse(message)
 
 
-def parse(text):
+def parse(message):
+    text = message.content.lower()
     cmd = text.split()
     if len(cmd) < 2:
         await message.channel.send('generating word cloud of {0.author}'.format(message))
