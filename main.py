@@ -46,7 +46,7 @@ async def on_message(message):
 async def parse(text,params):
     cmd = text.split()
     if len(cmd) < 2:
-        await message.channel.send('generating word cloud of {0.author}'.format(message))
+        await params["postTo"].send('generating word cloud of {0.author}'.format(message))
         print('generating word cloud of '+str(message.author))
 
         await getHistory(params)
