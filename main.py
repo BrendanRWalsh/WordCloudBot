@@ -47,7 +47,7 @@ async def parse(text,params):
     cmd = text.split()
     if len(cmd) < 2:
         await params["postTo"].send('generating word cloud of ' + str(params["author"]))
-        print('generating word cloud of '+str(message.author))
+        print('generating word cloud of '+str(params["author"]))
 
         await getHistory(params)
     else:
