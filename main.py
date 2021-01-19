@@ -33,15 +33,6 @@ async def on_message(message):
     if message.author == client.user:
         return
     if text.startswith('!cloudme'):
-        parse(message)
-
-
-def parse(message):
-    text = message.content.lower()
-    cmd = text.split()
-    if len(cmd) < 2:
-        await message.channel.send('generating word cloud of {0.author}'.format(message))
-        print('generating word cloud of '+str(message.author))
         params = {'author': message.author,
                     'guild':message.guild,
                     'postTo': message.channel,
@@ -49,6 +40,15 @@ def parse(message):
                         message.author],
                     'channels': None,
                     'range': 100}
+        parse(text,params)
+
+
+def parse(text,params):
+    cmd = text.split()
+    if len(cmd) < 2:
+        await params["postTo"].send('generating word cloud of {0.author}'.format(message))
+        print('generating word cloud of '+str(message.author))
+
         await getHistory(params)
     else:
         if cmd[1]=="help" | cmd[1]=="?":
