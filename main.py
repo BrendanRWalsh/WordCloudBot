@@ -33,38 +33,49 @@ async def on_message(message):
     if message.author == client.user:
         return
     if text.startswith('!cloudme'):
-        cmd = text.split()
-        if len(cmd) < 2:
-            await message.channel.send('generating word cloud of {0.author}'.format(message))
-            print('generating word cloud of '+str(message.author))
-            params = {'author': message.author,
-                      'postTo': message.channel,
-                      'users': [
-                          message.author],
-                      'channels': None,
-                      'range': 100}
-            await getHistory(params)
-        else:
-            text = text.replace("!cloudme ", "")
-            # parse(text, message.author)
+    parse(text, message.author)
 
 
 def parse(text):
-    cmds = {"users": none,
-            "channels": none,
-            "picture": none,
-            "range:": none
-            }
-    if text.find("user=") == -1 & text.find("users=") == -1:
-        u = text.find("users=")+5
+    cmd = text.split()
+    if len(cmd) < 2:
+        await message.channel.send('generating word cloud of {0.author}'.format(message))
+        print('generating word cloud of '+str(message.author))
+        params = {'author': message.author,
+                    'guild':message.guild,
+                    'postTo': message.channel,
+                    'users': [
+                        message.author],
+                    'channels': None,
+                    'range': 100}
+        await getHistory(params)
+    else:
+        if cmd[1]=="help" | cmd[1]=="?":
+            embed = discord.Embed(title="How to use:", colour=discord.Colour(0x6a5cae))
+            embed.set_footer(text="hosted at https://github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
+            embed.add_field(name="-----------------", value="!cloudme [parameters]")
+            embed.add_field(name="users= [name|id]", value="list of users to generate cloud of e.g. \"users= Dagon, Cthulu, John\". Default= self. Ensure commas \",\" are between users.")
+            embed.add_field(name="channels= [name|id]", value="list of channels to generate cloud from e.g. \"channels= Cultist talk, general_worship\". Default= all. Ensure commas \",\" are between channels.")
+            embed.add_field(name="picture= [url]", value="define an image to base cloud on. Default= user avater/guild image. Low-resolution images create bad word clouds!")
+            embed.add_field(name="mask= [true/false]", value="Choose to automatically mask image based on colour. Default = False.")
+            embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
+            await params["postTo"].send(embed=embed)
 
-    c = text.find("channel=")+8
-    p = text.find("picture=")+8
-    cmds = sorted([u, c, p])
-    print(cmds)
+    # cmds = {"users": none,
+    #         "channels": none,
+    #         "picture": none,
+    #         "range:": none
+    #         }
+    # if text.find("user=") == -1 & text.find("users=") == -1:
+    #     u = text.find("users=")+5
 
-    print(c)
-    print(text[cmds[0]:cmds[1]])
+    # c = text.find("channel=")+8
+    # p = text.find("picture=")+8
+    # cmds = sorted([u, c, p])
+    # print(cmds)
+
+    # print(c)
+    # print(text[cmds[0]:cmds[1]])
     # users = users.split(',')
     # users = list(map(str.strip,users))
     # print(users)
@@ -74,7 +85,7 @@ async def getHistory(params):
     words = {}
     # Create list of channels to iterate over
     if not params["channels"]:
-        params["channels"] = getChannels()
+        params["channels"] = getChannels(params["guild"])
 
     # iterate over channels and return word counts
     for channel in params["channels"]:
@@ -95,11 +106,8 @@ async def getHistory(params):
     await generateWordCloud(words, params)
 
 
-def getChannels():
-    channelList = []
-    for guild in client.guilds:
-        channelList = guild.text_channels
-    return channelList
+def getChannels(guild):
+    return guild.text_channels
 
 
 async def generateWordCloud(text, params):
