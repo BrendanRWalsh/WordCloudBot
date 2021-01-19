@@ -29,7 +29,7 @@ async def on_message(message):
     if message.author == client.user:
         return
     #Prefix check
-    if text.startswith('!cloudme'):
+    if text.startswith('!cloud'):
         #set paramaters to operate on
         params = {'author': message.author,
                     'guild':message.guild,
@@ -106,7 +106,7 @@ async def getHistory(params):
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
     if not words:
-        params["postTo"].send("Sorry, not enough words in this server for me to make a word cloud with these paramaters, try again later! (or spam the channels for a bit)")
+        await params["postTo"].send("Sorry, not enough words in this server for me to make a word cloud with these paramaters, try again later! (or spam the channels for a bit)")
     else:    
         await generateWordCloud(words, params)
 
