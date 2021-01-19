@@ -90,11 +90,6 @@ async def getHistory(params):
                             words[word] += 1
                         else:
                             words[word] = 1
-
-                # if len(data) == limit:
-                    # break
-                # if msg.crated_at > params["range"]:
-                    # break
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
     await generateWordCloud(words, params)
@@ -131,23 +126,3 @@ async def generateWordCloud(text, params):
     await params["postTo"].send(file=f)
 
 client.run(TOKEN)
-
-
-# message.content.matchAll()
-# (?=(users?=))
-# (?<=(user=|sers=))\s?(\w*(,\s?)\w*)*
-# def getHistory():
-# async for msg in message.channel.history(limit=10000)
-# msg = 'Hi {0.author.mention}'.format(message)
-# await message.channel.send(msg)
-# userPattern = r"users?\s*=\s*(.+)"
-#     channelPattern = r"channel?\s*=\s*(.+)"
-# data = data.append({'content': msg.content,
-#                     'time': msg.created_at,
-#                     'author': msg.author.name}, ignore_index=True)
-# file_location = "data.csv"  # Set the string to where you want the file to be saved to
-# data.to_csv(file_location)
-# data = pd.DataFrame(columns=['content', 'time', 'author'])
-# # Display the generated image:
-# plt.imshow(wordcloud, interpolation='bilinear')
-# plt.axis("off")
