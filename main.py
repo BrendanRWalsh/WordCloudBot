@@ -41,8 +41,8 @@ async def on_message(message):
                     'channels': None,
                     'range': datetime.datetime.now() - datetime.timedelta(days=100),
                     'image': None,
-                    'Mask': False,
-                    'Mask_colour':"white"}
+                    'mask': False,
+                    'mask_colour':"white"}
         await parse(text,params)
 
 # Interprate text from user
@@ -63,10 +63,9 @@ async def parse(text,params):
         embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
         embed.add_field(name="Quick generate:", value="!cloud me")
         await params["parentChannel"].send(embed=embed)
-    else if cmd[1]=="me":
-        await params["parentChannel"].send('generating word cloud of ' + str(params["author"] + "..."))
-        print('generating word cloud of '+str(params["author"]))
-        await getHistory(params)
+    elif cmd[1]=="me":
+        params["image"]=params["author"].avatar_url
+        await getConfirmation(params)
     else:
         None
     return True
@@ -106,6 +105,17 @@ def getChannels(guild):
     return guild.text_channels
 
 async def getConfirmation(params):
+    eUsers = []
+    for u in params["users"]:
+        eUsers.append(u.name)
+    eUsers = ", ".join(eUsers)
+    eChannels = []
+    if not params["channels"]:
+        eChannels = "everything"
+    else:
+        for c in params["channels"]:
+            eChannels.append(c.name)
+        eChannels = ", ".join(eChannels)
     embed = discord.Embed(title="Confirm details", colour=discord.Colour(0x6a5cae))
         embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
         embed.add_field(name="Users:", value=params["users"])
