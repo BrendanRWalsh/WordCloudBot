@@ -68,7 +68,6 @@ async def parse(text,params):
         print('generating word cloud of '+str(params["author"]))
         await getHistory(params)
     else:
-
         None
     return True
 
@@ -118,6 +117,19 @@ async def getConfirmation(params):
         msg = await params["parentChannel"].send(embed=embed)
         await msg.add_reaction('✔️')
         await msg.add_reaction('❌')
+        def check(reaction, user):
+            if user == params["author"] and str(reaction.emoji) == '✔️':
+                generateWordCloud(text,params)
+                return True
+            if user == params["author"] and str(reaction.emoji) == '❌':
+                await params["parentChannel"].send('Generation Cancelled')
+                break
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
+        except asyncio.TimeoutError:
+            await channel.send('👎')
+        else:
+            await channel.send('👍')
 
 async def generateWordCloud(text, params):
     avatar = requests.get(params["author"].avatar_url)
