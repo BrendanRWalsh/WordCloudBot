@@ -11,6 +11,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+import asyncio
 
 # Discord
 load_dotenv()
@@ -18,6 +19,8 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 guild = discord.Guild
 trackerLimit=10000
+minImageSize = [800,600]
+maxImageSize = [1920,1440]
 # log onto discord service
 @client.event
 async def on_ready():
@@ -79,27 +82,29 @@ async def getHistory(params):
 
     # iterate over channels and return word counts
     for channel in params["channels"]:
-        async for msg in channel.history(limit=trackerLimit):
-            if msg.author in params["users"]:
-                content = msg.content.lower()
-                for i in [";", ";", ",", ".", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
-                    content = content.replace(i, " ")
-                content = content.split()
-                for word in content:
-                    if word[0].isalpha() and len(word) > 2 and len(word) < 10 and not word.startswith("html") and not word.startswith("http") and word not in ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but"]:
-                        if word in words:
-                            words[word] += 1
-                        else:
-                            words[word] = 1
-            if msg.created_at < params['range']:
-                break
+        try:
+            async for msg in channel.history(limit=trackerLimit):
+                if msg.author in params["users"]:
+                    content = msg.content.lower()
+                    for i in [";", ";", ",", ".", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
+                        content = content.replace(i, " ")
+                    content = content.split()
+                    for word in content:
+                        if word[0].isalpha() and len(word) > 2 and len(word) < 10 and not word.startswith("html") and not word.startswith("http") and word not in ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but"]:
+                            if word in words:
+                                words[word] += 1
+                            else:
+                                words[word] = 1
+                if msg.created_at < params['range']:
+                    break
+        except Exception as e: 
+            print(e)
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
     if not words:
         await params["parentChannel"].send("Sorry, not enough words in this server for me to make a word cloud with these paramaters, try again later! (or spam the channels for a bit)")
     else:    
         await generateWordCloud(words, params)
-
 
 def getChannels(guild):
     return guild.text_channels
@@ -124,6 +129,7 @@ async def getConfirmation(params):
     embed.add_field(name="Image:", value=params["image"])
     embed.add_field(name="Mask:", value=params["mask"])
     embed.add_field(name="Mask_colour:", value=params["mask_colour"])
+    embed.set_thumbnail(url=params["image"])
     msg = await params["parentChannel"].send(embed=embed)
     await msg.add_reaction('✔️')
     await msg.add_reaction('❌')
@@ -140,9 +146,19 @@ async def getConfirmation(params):
         await params["parentChannel"].send('generating word cloud of ' + str(params["author"]) + "...")
         print('generating word cloud of '+str(params["author"]))
         await getHistory(params)
+
 async def generateWordCloud(text, params):
-    avatar = requests.get(params["author"].avatar_url)
-    image = Image.open(BytesIO(avatar.content))
+    try:
+        avatar = requests.get(params["author"].avatar_url)
+        image = Image.open(BytesIO(avatar.content))
+    except:
+        print("error in avatar read")
+    ##Script to resize small images
+    ##needs more power to run
+    #if image.size[0] < minImageSize[0]:
+    #    wpercent = (minImageSize[0] / float(image.size[0]))
+    #    hsize = int((float(image.size[1]) * float(minImageSize[0])))
+    #    image = image.resize((minImageSize[0], hsize), Image.ANTIALIAS)
     colouring = np.array(image)
     stopwords = set(STOPWORDS)
     filename = "wordclouds/"+str(params["author"])+".png"
