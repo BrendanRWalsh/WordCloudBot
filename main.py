@@ -19,7 +19,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 guild = discord.Guild
 trackerLimit=10000
-minImageSize = [800,600]
+minImageSize = [400,400]
 maxImageSize = [1920,1440]
 # log onto discord service
 @client.event
@@ -57,13 +57,13 @@ async def parse(text,params):
         # if user called without params or help commands
         embed = discord.Embed(title="How to use:", colour=discord.Colour(0x6a5cae))
         embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
-        embed.add_field(name="-----------------", value="!cloudme [parameters]")
-        embed.add_field(name="users= [name|id]", value="list of users to generate cloud of e.g. \"users= Dagon, Cthulu, John\". Alias \"me\" for own cloud. Ensure commas \",\" are between users.")
-        embed.add_field(name="channels= [name|id]", value="list of channels to generate cloud from e.g. \"channels= Cultist talk, general_worship\". Default= all. Ensure commas \",\" are between channels.")
-        embed.add_field(name="date= [days | d/m/y]", value="how far back to read messages. Bare numbers will be interpretited as days. Default = 100 days")
-        embed.add_field(name="picture= [url]", value="define an image to base cloud on. Default= user avater/guild image. Low-resolution images create bad word clouds!")
-        embed.add_field(name="mask= [true/false]", value="Choose to automatically mask image based on colour. Default = False.")
-        embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
+        # embed.add_field(name="-----------------", value="!cloudme [parameters]")
+        # embed.add_field(name="users= [name|id]", value="list of users to generate cloud of e.g. \"users= Dagon, Cthulu, John\". Alias \"me\" for own cloud. Ensure commas \",\" are between users.")
+        # embed.add_field(name="channels= [name|id]", value="list of channels to generate cloud from e.g. \"channels= Cultist talk, general_worship\". Default= all. Ensure commas \",\" are between channels.")
+        # embed.add_field(name="date= [days | d/m/y]", value="how far back to read messages. Bare numbers will be interpretited as days. Default = 100 days")
+        # embed.add_field(name="picture= [url]", value="define an image to base cloud on. Default= user avater/guild image. Low-resolution images create bad word clouds!")
+        # embed.add_field(name="mask= [true/false]", value="Choose to automatically mask image based on colour. Default = False.")
+        # embed.add_field(name="mask_colour= [name/hex]", value="Choose which colour to mask out. Default = white / FFFFFF.")
         embed.add_field(name="Quick generate:", value="!cloud me")
         await params["parentChannel"].send(embed=embed)
     elif cmd[1]=="me":
@@ -79,22 +79,28 @@ async def getHistory(params):
     # Create list of channels to iterate over
     if not params["channels"]:
         params["channels"] = getChannels(params["guild"])
-
+    msgCount = 0
     # iterate over channels and return word counts
     for channel in params["channels"]:
         try:
             async for msg in channel.history(limit=trackerLimit):
+                if msgCount > trackerLimit:
+                    break
                 if msg.author in params["users"]:
-                    content = msg.content.lower()
-                    for i in [";", ";", ",", ".", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
-                        content = content.replace(i, " ")
-                    content = content.split()
-                    for word in content:
-                        if word[0].isalpha() and len(word) > 2 and len(word) < 10 and not word.startswith("html") and not word.startswith("http") and word not in ["the", "and", "that", "have", "for", "not", "with", "you", "this", "but"]:
-                            if word in words:
-                                words[word] += 1
-                            else:
-                                words[word] = 1
+                    msgCount += 1
+                    if "www" not in content:
+                        content = msg.content.lower()
+                        for i in [";", ":", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
+                            content = content.replace(i, " ")
+                        for i in ["~","\`","@","#","$","%","^","&","*","_","+","=","|",">","<",".",","]:
+                            content = content.replace(i, "")
+                        content = content.split()
+                        for word in content:
+                            if word[0].isalpha() and len(word) > 2 and len(word) < 10 and not word.startswith("html") and not word.startswith("http") and word not in ["that","have","with","this","from","they","will","would","there","their","what","about","which","when","make","like","time","just","know","take","people","into","year","your","good","some","could","them","other","than","then","look","only","come","over","think","also","back","after","work","first","well","even","want","because","these","give","most"]:
+                                if word in words:
+                                    words[word] += 1
+                                else:
+                                    words[word] = 1
                 if msg.created_at < params['range']:
                     break
         except Exception as e: 
@@ -122,13 +128,13 @@ async def getConfirmation(params):
             eChannels.append(c.name)
         eChannels = ", ".join(eChannels)
     embed = discord.Embed(title="Confirm details", colour=discord.Colour(0x6a5cae))
-    embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
-    embed.add_field(name="Users:", value=eUsers)
-    embed.add_field(name="Channels:", value=eChannels)
-    embed.add_field(name="Range:", value=params["range"])
+    # embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
+    # embed.add_field(name="Users:", value=eUsers)
+    # embed.add_field(name="Channels:", value=eChannels)
+    # embed.add_field(name="Range:", value=params["range"])
     embed.add_field(name="Image:", value=params["image"])
-    embed.add_field(name="Mask:", value=params["mask"])
-    embed.add_field(name="Mask_colour:", value=params["mask_colour"])
+    # embed.add_field(name="Mask:", value=params["mask"])
+    # embed.add_field(name="Mask_colour:", value=params["mask_colour"])
     embed.set_thumbnail(url=params["image"])
     msg = await params["parentChannel"].send(embed=embed)
     await msg.add_reaction('✔️')
@@ -151,16 +157,17 @@ async def generateWordCloud(text, params):
     try:
         avatar = requests.get(params["author"].avatar_url)
         image = Image.open(BytesIO(avatar.content))
+        # convert gif to frame
         if image.is_animated:
             image = image.convert('RGBA')
     except:
         print("error in avatar read")
     ##Script to resize small images
     ##needs more power to run
-    #if image.size[0] < minImageSize[0]:
-    #    wpercent = (minImageSize[0] / float(image.size[0]))
-    #    hsize = int((float(image.size[1]) * float(minImageSize[0])))
-    #    image = image.resize((minImageSize[0], hsize), Image.ANTIALIAS)
+    if image.size[0] < minImageSize[0]:
+        wpercent = (minImageSize[0] / float(image.size[0]))
+        hsize = int((float(image.size[1]) * float(minImageSize[0])))
+        image = image.resize((minImageSize[0], hsize), Image.ANTIALIAS)
     colouring = np.array(image)
     stopwords = set(STOPWORDS)
     userName= ''.join(e for e in str(params["author"]) if e.isalnum())
