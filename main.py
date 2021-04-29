@@ -18,9 +18,9 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 guild = discord.Guild
-trackerLimit=10000
+trackerLimit = 1000
 minImageSize = [400,400]
-maxImageSize = [1920,1440]
+maxImageSize = [800,800]
 # log onto discord service
 @client.event
 async def on_ready():
@@ -162,9 +162,9 @@ async def generateWordCloud(text, params):
             image = image.convert('RGBA')
     except:
         print("error in avatar read")
-    ##Script to resize small images
-    ##needs more power to run
-    if image.size[0] < minImageSize[0]:
+    #Script to resize small images
+    #needs more power to run
+    if image.size[0] < minImageSize[0] or image.size[0] > maxImageSize[0]:
         wpercent = (minImageSize[0] / float(image.size[0]))
         hsize = int((float(image.size[1]) * float(minImageSize[0])))
         image = image.resize((minImageSize[0], hsize), Image.ANTIALIAS)
@@ -187,7 +187,7 @@ async def generateWordCloud(text, params):
     wc.to_file(filename)
     f = discord.File(filename)
     print(('Wordcloud for ' + str(params["author"]) + ' complete!'))
-    await params["parentChannel"].send('Wordcloud for ' + str(params["author"]) + ' complete!')
+    await params["parentChannel"].send('Wordcloud for ' + params["author"].mention() + ' complete!')
     await params["parentChannel"].send(file=f)
 
 client.run(TOKEN)
