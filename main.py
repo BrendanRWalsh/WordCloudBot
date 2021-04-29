@@ -187,7 +187,7 @@ async def generateWordCloud(text, params):
     wc.to_file(filename)
     f = discord.File(filename)
     print(('Wordcloud for ' + str(params["author"]) + ' complete!'))
-    await params["parentChannel"].send('Wordcloud for ' + str(params["author"]) + ' complete!')
+    await params["parentChannel"].send('Wordcloud for ' + params["author"].mention() + ' complete!')
     await params["parentChannel"].send(file=f)
 
 client.run(TOKEN)
