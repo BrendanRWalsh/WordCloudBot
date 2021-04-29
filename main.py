@@ -151,6 +151,8 @@ async def generateWordCloud(text, params):
     try:
         avatar = requests.get(params["author"].avatar_url)
         image = Image.open(BytesIO(avatar.content))
+        if image.is_animated:
+            image = image.convert('RGBA')
     except:
         print("error in avatar read")
     ##Script to resize small images
@@ -161,7 +163,8 @@ async def generateWordCloud(text, params):
     #    image = image.resize((minImageSize[0], hsize), Image.ANTIALIAS)
     colouring = np.array(image)
     stopwords = set(STOPWORDS)
-    filename = "wordclouds/"+str(params["author"])+".png"
+    userName= ''.join(e for e in str(params["author"]) if e.isalnum())
+    filename = "wordclouds/"+userName+".png"
     wc = WordCloud(width=image.width, relative_scaling=0.2, stopwords=stopwords, height=image.height, mode="RGB", min_font_size=1,
                    max_words=2000, repeat=True, font_step=1, max_font_size=int(image.width/15))
     wc.generate_from_frequencies(text)
