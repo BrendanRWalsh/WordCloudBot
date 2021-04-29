@@ -88,8 +88,8 @@ async def getHistory(params):
                     break
                 if msg.author in params["users"]:
                     msgCount += 1
+                    content = msg.content.lower()
                     if "www" not in content:
-                        content = msg.content.lower()
                         for i in [";", ":", "(", ")", "[", "]", "{", "}", "`", "~", "=", "+", "/", "\\"]:
                             content = content.replace(i, " ")
                         for i in ["~","\`","@","#","$","%","^","&","*","_","+","=","|",">","<",".",","]:
