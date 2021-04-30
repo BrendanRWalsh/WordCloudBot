@@ -32,11 +32,11 @@ async def on_ready():
 #Listen event
 @client.event
 async def on_message(message):
-    text = message.content.lower()
+    text = message.content
     if message.author == client.user:
         return
     #Prefix check
-    if text.startswith('!cloud'):
+    if text.lower().startswith('!cloud'):
         #set paramaters to operate on
         print("called by" + str(message.author))
         params = {'author': message.author,
@@ -59,27 +59,44 @@ def findURL(text):
 # Interprate text from user
 async def parse(text,params,message):
     cmd = text.split()
-    # check if the user submitted any parameters or 
+    # No paramaters or Help 
     if len(cmd) < 2 or cmd[1]=="help" or cmd[1]=="?":
         # if user called without params or help commands
         embed = discord.Embed(title="How to use:", colour=discord.Colour(0x6a5cae))
-        embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
         embed.add_field(name="Quick generate:", value="!cloud me")
         await params["parentChannel"].send(embed=embed)
-    if cmd[1]=="me":
+
+    #Quick generate
+    elif cmd[1]=="me":
         params["users"].append(message.author)
-    url = findURL(text)
-    if len(url)== 0:
-        params["image"] = params["author"].avatar_url
-    else:
-        params["image"] = url
-    if len(message.mentions) > 0:
-        for member in message.mentions:
-            print(int(member.id))
+        params["image"] = params["author"].avatar_url 
+        cmd.remove("me")
+    #user's mentioned?
+    elif len(message.mentions) > 0:
+        if len(message.mentions) ==1:
+            usr = message.guild.get_member(int(message.mentions[0].id))
+            params["image"] = usr.avatar_url
+        for member in message.mentions:            
             usr = message.guild.get_member(int(member.id))
-            print(usr)
             params["users"].append(usr)
+    #Check for Url of image to use
+    url = findURL(text)
+    if len(url) == 1:
+        params["image"] = url
+        #get rid of it for iteration
+        cmd.remove(url)
+    # get rid of the prefix to allow for iteration
+    cmd.remove(cmd[0])
+    # Get user by name
+    for item in cmd:
+        usr = message.guild.get_member_named(str(item))
+        if usr is not None and usr not in params["users"]:
+            params["users"].append(usr)
+        print("image :")
+        if len(params["users"]) > 0 and params["image"] is None:
+            params["image"] = params["users"][0].avatar_url
     await message.delete()
+    print(params["image"])
     await getConfirmation(params)
     return True
 
@@ -130,6 +147,7 @@ def getChannels(guild):
 
 async def getConfirmation(params):
     eUsers = []
+    print(params["image"])
     for u in params["users"]:
         eUsers.append(u.name)
     eUsers = ", ".join(eUsers)
@@ -142,7 +160,7 @@ async def getConfirmation(params):
         eChannels = ", ".join(eChannels)
     embed = discord.Embed(title="Confirm details", colour=discord.Colour(0x6a5cae))
     # embed.set_footer(text="github.com/BrendanRWalsh/WordCloudBot", icon_url="https://cdn.discordapp.com/embed/avatars/0.png")
-    # embed.add_field(name="Users:", value=eUsers)
+    embed.add_field(name="Users:", value=eUsers)
     # embed.add_field(name="Channels:", value=eChannels)
     # embed.add_field(name="Range:", value=params["range"])
     embed.add_field(name="Image:", value=params["image"])
@@ -166,8 +184,8 @@ async def getConfirmation(params):
     else:
         await msg.delete()
         if str(reaction.emoji) == '✔️':
-            await params["parentChannel"].send('generating word cloud of ' + str(params["author"]) + "...")
-            print('generating word cloud of '+str(params["author"]))
+            await params["parentChannel"].send('Making art for ' + str(params["author"]) + "...")
+            print('generating word cloud for '+str(params["author"]))
             await getHistory(params)
 
 async def generateWordCloud(text, params):
@@ -215,8 +233,8 @@ async def generateWordCloud(text, params):
         background = Image.open(filename)
         if image.width < 400:
             ratio = 400 /image.width
-            image = image.resize((400,image.height*ratio),Image.ANTIALIAS)
-        background = background.resize((image.width,image.height),Image.ANTIALIAS)
+            image = image.resize((400,int(image.height*ratio)),Image.ANTIALIAS)
+        background = background.resize((int(image.width),int(image.height)),Image.ANTIALIAS)
         image.putalpha(30)
         background.paste(image,(0,0),image)
         background.save(filename)
