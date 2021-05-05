@@ -82,11 +82,14 @@ async def parse(text,params,message):
     #Check for Url of image to use
     url = findURL(text)
     if len(url) == 1:
-        params["image"] = url
+        params["image"] = url[0]
         #get rid of it for iteration
-        cmd.remove(url)
     # get rid of the prefix to allow for iteration
-    cmd.remove(cmd[0])
+    mask = next((s for s in cmd if "mask=" in s),None)
+    if mask:
+        cmd.remove(mask)
+        params["mask"] = mask.lstrip("mask=")
+
     # Get user by name
     for item in cmd:
         usr = message.guild.get_member_named(str(item))
@@ -96,8 +99,10 @@ async def parse(text,params,message):
         if len(params["users"]) > 0 and params["image"] is None:
             params["image"] = params["users"][0].avatar_url
     await message.delete()
-    print(params["image"])
-    await getConfirmation(params)
+    if len(params["users"])==0:
+        await params["parentChannel"].send("No user found (Donut forget to CaPiTaLiSe ThE NaMeS)")
+    else:
+        await getConfirmation(params)
     return True
 
 
@@ -138,7 +143,7 @@ async def getHistory(params):
     words = {k: v for k, v in sorted(
         words.items(), key=lambda item: item[1], reverse=True)}
     if not words:
-        await params["parentChannel"].send("Sorry, not enough words in this server for me to make a word cloud with these paramaters, try again later! (or spam the channels for a bit)")
+        await params["parentChannel"].send("Sorry, not enough words to use, or I am error")
     else:    
         await generateWordCloud(words, params)
 
@@ -164,7 +169,7 @@ async def getConfirmation(params):
     # embed.add_field(name="Channels:", value=eChannels)
     # embed.add_field(name="Range:", value=params["range"])
     embed.add_field(name="Image:", value=params["image"])
-    # embed.add_field(name="Mask:", value=params["mask"])
+    embed.add_field(name="Mask:", value=params["mask"])
     # embed.add_field(name="Mask_colour:", value=params["mask_colour"])
     embed.add_field(name="This may take some time", value="You will be pinged with your completed work of art.")
     embed.set_thumbnail(url=params["image"])
@@ -200,6 +205,24 @@ async def generateWordCloud(text, params):
         msg = await params["parentChannel"].send("I AM ERROR")
         print("error in avatar read")
         print(e)
+    # create mask
+    if params["mask"]:
+        m = params["mask"]
+        #if not m.startswith("#"):
+        #   m = "#" + m
+        rgb = tuple(int(m[i:i+2], 16) for i in (0, 2, 4))
+        mask = image.copy()
+        data = mask.getdata()
+        newData = []
+        for item in data:
+            if item[0] == rgb[0] and item[1] == rgb[1] and item[2] == rgb[2]:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append((0,0,0,1))
+        mask.putdata(newData)
+        mask = np.array(mask)
+    else:
+        mask = None
     #Script to resize small images
     #needs more power to run
     #if image.size[0] < minImageSize[0] or image.size[0] > maxImageSize[0]:
@@ -210,9 +233,10 @@ async def generateWordCloud(text, params):
     stopwords = set(STOPWORDS)
     userName= ''.join(e for e in str(params["author"]) if e.isalnum())
     filename = "wordclouds/"+userName+".png"
+    # make mask work good
     try:
         imgScale = 2400 / image.size[0]
-        wc = WordCloud(scale = imgScale, width=image.width, relative_scaling=0.2, stopwords=stopwords, height=image.height, mode="RGBA", min_font_size=1,max_words=2000, repeat=True, font_step=1, max_font_size=int(image.width/15))
+        wc = WordCloud(mask=mask,scale = imgScale, width=image.width, relative_scaling=0.2, stopwords=stopwords, height=image.height, mode="RGBA", min_font_size=1,max_words=2000, repeat=True, font_step=1, max_font_size=int(image.width/15))
     except Exception as e:
         print(e)
         imgScale = 1
