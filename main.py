@@ -29,17 +29,6 @@ maxImageSize = [800,800]
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
 
-async def countdown(message):
-    future = datetime.datetime(2021,7,5,16,45,0)
-    while datetime.datetime.now() < future :
-        diff = future - datetime.datetime.now()
-        days = diff.days
-        seconds = diff.seconds
-        hours = seconds//3600
-        minutes = (seconds//60)%60
-        await message.channel.send(str(days)+" Days, "+str(hours)+" Hours, and "+str(minutes)+" Minutes remain...")
-        await asyncio.sleep(86400)
-
 #Listen event
 @client.event
 async def on_message(message):
@@ -60,17 +49,6 @@ async def on_message(message):
                     'mask': False,
                     'mask_colour':"white"}
         await parse(text,params,message)
-    if text.lower().startswith("who's cute?"):
-        await message.channel.send('Nyphra is cute')
-    if text.lower().startswith("how long"): 
-        future = datetime.datetime(2021,7,5,16,45,0)
-        diff = future - datetime.datetime.now()
-        days = diff.days
-        seconds = diff.seconds
-        hours = seconds//3600
-        minutes = (seconds//60)%60
-        await message.channel.send(str(days)+" Days, "+str(hours)+" Hours, and "+str(minutes)+" Minutes remain...")
-        await countdown(message)
 
 # check for urls in text body
 def findURL(text):
